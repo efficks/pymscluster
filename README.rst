@@ -12,12 +12,11 @@ Features
 
 Install
 --------
-Pip::
-    pip install pymscluster
+`pip install pymscluster`
 
 Example
 --------
-.. code:: python
+::
     import mscluster
     c = mscluster.Cluster("Cluster address")
     
