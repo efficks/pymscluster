@@ -251,46 +251,5 @@ class Node(object):
         if self.__handle:
             ctypes.windll.ClusAPI.CloseClusterNode(self.__handle)
 
-class TestCluster(unittest.TestCase):
-    def test_name(self):
-        c = Cluster("SR-SIC-GES1")
-        self.assertGreater(len(c.name), 0)
-
-        with self.assertRaisesRegex(OSError, r"WinError"):
-            c = Cluster("BAD_ADRESS")
-    
-    def test_grouplist(self):
-        c = Cluster("SR-SIC-GES1")
-        self.assertGreater(len(list(c.groups)), 0)
-        self.assertGreater(len(list(c.nodes)), 0)
-        self.assertGreater(len(list(c.resources)), 0)
-    
-class TestClusterGroup(unittest.TestCase):
-    def test_group(self):
-        c = Cluster("SR-SIC-GES1")
-        name = "Group SIP"
-        g = c.openGroup(name)
-        self.assertEqual(g.name, name)
-
-        g.state
-        g.node
-        
-        with self.assertRaisesRegex(OSError, r"WinError"):
-            c.openGroup("toto")
-
-    def test_group_resource(self):
-        c = Cluster("SR-SIC-GES1")
-        g = c.openGroup("Group SIP")
-        self.assertGreater(len(list(g.resources)), 0)
-
-class TestClusterResource(unittest.TestCase):
-    def test_resource(self):
-        c = Cluster("SR-SIC-GES1")
-        r = c.openResource("ALSTOM.STM.PIS.DelegationHost")
-        self.assertEqual(r.name, "ALSTOM.STM.PIS.DelegationHost")
-
-        with self.assertRaisesRegex(OSError, r"WinError"):
-            c.openResource("BAD RESOURCE")
-
 if __name__ == '__main__':
     unittest.main();
