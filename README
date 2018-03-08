@@ -1,10 +1,9 @@
 Python module for Windows Server Failover Clustering
-==========
+=====
 
 This module manage the Windows Server Failover Clustering using the Windows API.
 
-Features
---------
+## Features
 * List cluster nodes, resources and group
 * Get node, resource and group status
 * Move group between nodes
@@ -16,7 +15,7 @@ Install
 
 Example
 --------
-::
+```
     import mscluster
     c = mscluster.Cluster("Cluster address")
     
@@ -26,3 +25,4 @@ Example
     r = c.openResource("Resource name")
     r.takeOffline()
     t.takeOnline()
+```
