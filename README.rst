@@ -12,20 +12,18 @@ Features
 
 Install
 --------
-
 Pip::
     pip install pymscluster
 
 Example
 --------
-```python
-import mscluster
-c = mscluster.Cluster("Cluster address")
-
-# Print group list
-print(list(c.groups))
-
-r = c.openResource("Resource name")
-r.takeOffline()
-t.takeOnline()
-```
+.. code:: python
+    import mscluster
+    c = mscluster.Cluster("Cluster address")
+    
+    # Print group list
+    print(list(c.groups))
+    
+    r = c.openResource("Resource name")
+    r.takeOffline()
+    t.takeOnline()
