@@ -21,11 +21,27 @@ Example
 .. code-block:: python
 
     import mscluster
-    c = mscluster.Cluster("Cluster address")
     
-    # Print group list
-    print(list(c.groups))
+    c = mscluster.Cluster("localhost")
+
+    print('Cluster name: {}'.format(c.name))
     
-    r = c.openResource("Resource name")
+    for gname in c.groups:
+        g = c.openGroup(gname)
+        gnode = g.node
+        gstate = g.state
+        print('Resource Group: {}, state: {}, owner node: {}'.format(gname, gstate.name, gnode))
+
+    for nname in c.nodes:
+        n = c.openNode(nname)
+        nstate = n.state
+        print('Node: {}, state: {}'.format(nname, nstate.name))
+
+    for rname in c.resources:
+        r = c.openResource(rname)
+        rstate = r.state
+        print('Resource: {}, state: {}, node: {}, group: {}'.format(rname, rstate.state.name, rstate.node, rstate.group))
+
+    r = c.openResource("IP Address 192.168.12.236")
     r.takeOffline()
     t.takeOnline()
