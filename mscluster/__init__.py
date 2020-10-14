@@ -1,88 +1,210 @@
+#!/usr/bin/env python3
+
+"""Windows Clustering API for Python.
+
+Based on https://github.com/efficks/pymscluster, revamped by frembiakowski@fb.com.
+
+Vast majority of this code is just wrappers around native API described here:
+    https://docs.microsoft.com/en-us/windows/win32/api/_mscs/
+
+"""
+
 import ctypes
-import ctypes.wintypes
+from ctypes.wintypes import *
 import unittest
 from enum import IntEnum
 
-if not hasattr(ctypes.wintypes, 'LPDWORD'):
-    ctypes.wintypes.LPDWORD = ctypes.POINTER(ctypes.wintypes.DWORD)
 
+class CLUSTER_GROUP_STATE(IntEnum):
+    """https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-getclustergroupstate"""
+    ClusterGroupStateUnknown = -1
+    ClusterGroupOnline = 0
+    ClusterGroupOffline = 1
+    ClusterGroupFailed = 2
+    ClusterGroupPartialOnline = 3
+    ClusterGroupPending = 4
+
+
+class CLUSTER_NODE_STATE(IntEnum):
+    """https://docs.microsoft.com/en-us/windows/win32/api/clusapi/ne-clusapi-cluster_node_state"""
+    ClusterNodeStateUnknown = -1
+    ClusterNodeUp = 0
+    ClusterNodeDown = 1
+    ClusterNodePaused = 2
+    ClusterNodeJoining = 3
+
+
+class CLUSTER_RESOURCE_STATE(IntEnum):
+    """https://docs.microsoft.com/en-us/windows/win32/api/clusapi/ne-clusapi-cluster_resource_state"""
+    ClusterResourceStateUnknown    = -1
+    ClusterResourceInherited       = 0
+    ClusterResourceInitializing    = 1
+    ClusterResourceOnline          = 2
+    ClusterResourceOffline         = 3
+    ClusterResourceFailed          = 4
+    ClusterResourcePending         = 128
+    ClusterResourceOnlinePending   = 129
+    ClusterResourceOfflinePending  = 130
+
+
+class CLUSTER_ENUM(IntEnum):
+    """https://docs.microsoft.com/en-us/windows/win32/api/clusapi/ne-clusapi-cluster_enum"""
+    CLUSTER_ENUM_NODE                   = 2 ** 0
+    CLUSTER_ENUM_RESTYPE                = 2 ** 1
+    CLUSTER_ENUM_RESOURCE               = 2 ** 2
+    CLUSTER_ENUM_GROUP                  = 2 ** 3
+    CLUSTER_ENUM_NETWORK                = 2 ** 4
+    CLUSTER_ENUM_NETINTERFACE           = 2 ** 5
+    CLUSTER_ENUM_SHARED_VOLUME_GROUP    = 2 ** 29
+    CLUSTER_ENUM_SHARED_VOLUME_RESOURCE = 2 ** 30
+    CLUSTER_ENUM_INTERNAL_NETWORK       = 2 ** 31
+    CLUSTER_ENUM_ALL                    = 2 ** 32 - 1
+
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-opencluster
+OpenCluster = ctypes.windll.ClusAPI.OpenCluster
+OpenCluster.argtypes = [LPCWSTR]
+OpenCluster.restype = HANDLE
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-closecluster
+CloseCluster = ctypes.windll.ClusAPI.CloseCluster
+CloseCluster.argtypes = [HANDLE]
+CloseCluster.restype = BOOL
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-getclusterinformation
+GetClusterInformation = ctypes.windll.ClusAPI.GetClusterInformation
+GetClusterInformation.argtypes = [HANDLE, LPWSTR, LPDWORD, LPVOID]
+GetClusterInformation.restype = DWORD
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clusteropenenum
 ClusterOpenEnum = ctypes.windll.ClusAPI.ClusterOpenEnum
-ClusterOpenEnum.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD]
-ClusterOpenEnum.restype = ctypes.wintypes.HANDLE
+ClusterOpenEnum.argtypes = [HANDLE, DWORD]
+ClusterOpenEnum.restype = HANDLE
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clustercloseenum
 ClusterCloseEnum = ctypes.windll.ClusAPI.ClusterCloseEnum
-ClusterCloseEnum.argtypes = [ctypes.wintypes.HANDLE]
+ClusterCloseEnum.argtypes = [HANDLE]
+ClusterCloseEnum.restype = DWORD
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clusterenum
 ClusterEnum = ctypes.windll.ClusAPI.ClusterEnum
-ClusterEnum.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD, ctypes.wintypes.LPDWORD, ctypes.wintypes.LPWSTR, ctypes.wintypes.LPDWORD]
-ClusterEnum.restype = ctypes.wintypes.DWORD
+ClusterEnum.argtypes = [HANDLE, DWORD, LPDWORD, LPWSTR, LPDWORD]
+ClusterEnum.restype = DWORD
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clustergroupopenenum
 ClusterGroupOpenEnum = ctypes.windll.ClusAPI.ClusterGroupOpenEnum
-ClusterGroupOpenEnum.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD]
-ClusterGroupOpenEnum.restype = ctypes.wintypes.HANDLE
+ClusterGroupOpenEnum.argtypes = [HANDLE, DWORD]
+ClusterGroupOpenEnum.restype = HANDLE
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clustergroupcloseenum
 ClusterGroupCloseEnum = ctypes.windll.ClusAPI.ClusterGroupCloseEnum
-ClusterGroupCloseEnum.argtypes = [ctypes.wintypes.HANDLE]
+ClusterGroupCloseEnum.argtypes = [HANDLE]
+ClusterGroupCloseEnum.restype = DWORD
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clustergroupenum
 ClusterGroupEnum = ctypes.windll.ClusAPI.ClusterGroupEnum
-ClusterGroupEnum.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.DWORD, ctypes.wintypes.LPDWORD, ctypes.wintypes.LPWSTR, ctypes.wintypes.LPDWORD]
-ClusterGroupEnum.restype = ctypes.wintypes.DWORD
+ClusterGroupEnum.argtypes = [HANDLE, DWORD, LPDWORD, LPWSTR, LPDWORD]
+ClusterGroupEnum.restype = DWORD
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-openclustergroup
 OpenClusterGroup = ctypes.windll.ClusAPI.OpenClusterGroup
-OpenClusterGroup.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.LPCWSTR]
-OpenClusterGroup.restype = ctypes.wintypes.HANDLE
+OpenClusterGroup.argtypes = [HANDLE, LPCWSTR]
+OpenClusterGroup.restype = HANDLE
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-closeclustergroup
+CloseClusterGroup = ctypes.windll.ClusAPI.CloseClusterGroup
+CloseClusterGroup.argtypes = [HANDLE]
+CloseClusterGroup.restype = BOOL
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-getclustergroupstate
 GetClusterGroupState = ctypes.windll.ClusAPI.GetClusterGroupState
-GetClusterGroupState.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.LPWSTR, ctypes.wintypes.LPDWORD]
-GetClusterGroupState.restype = ctypes.wintypes.DWORD
+GetClusterGroupState.argtypes = [HANDLE, LPWSTR, LPDWORD]
+GetClusterGroupState.restype = CLUSTER_GROUP_STATE
 
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-openclusterresource
 OpenClusterResource = ctypes.windll.ClusAPI.OpenClusterResource
-OpenClusterResource.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.LPCWSTR]
-OpenClusterResource.restype = ctypes.wintypes.HANDLE
+OpenClusterResource.argtypes = [HANDLE, LPCWSTR]
+OpenClusterResource.restype = HANDLE
 
+CloseClusterResource = ctypes.windll.ClusAPI.CloseClusterResource
+CloseClusterResource.argtypes = [HANDLE]
+CloseClusterResource.restype = BOOL
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-getclusterresourcestate
+GetClusterResourceState = ctypes.windll.ClusAPI.GetClusterResourceState
+GetClusterResourceState.argtypes = [HANDLE, LPWSTR, LPDWORD, LPWSTR, LPDWORD]
+GetClusterResourceState.restype = CLUSTER_RESOURCE_STATE
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-offlineclusterresource
+OfflineClusterResource = ctypes.windll.ClusAPI.OfflineClusterResource
+OfflineClusterResource.argtypes = [HANDLE]
+OfflineClusterResource.restype = DWORD
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-onlineclusterresource
+OnlineClusterResource = ctypes.windll.ClusAPI.OnlineClusterResource
+OnlineClusterResource.argtypes = [HANDLE]
+OnlineClusterResource.restype = DWORD
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-openclusternode
 OpenClusterNode = ctypes.windll.ClusAPI.OpenClusterNode
-OpenClusterNode.argtypes = [ctypes.wintypes.HANDLE, ctypes.wintypes.LPCWSTR]
-OpenClusterNode.restype = ctypes.wintypes.HANDLE
+OpenClusterNode.argtypes = [HANDLE, LPCWSTR]
+OpenClusterNode.restype = HANDLE
+
+CloseClusterNode = ctypes.windll.ClusAPI.CloseClusterNode
+CloseClusterNode.argtypes = [HANDLE]
+CloseClusterNode.restype = BOOL
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-getclusternodestate
+GetClusterNodeState = ctypes.windll.ClusAPI.GetClusterNodeState
+GetClusterNodeState.argtypes = [HANDLE]
+GetClusterNodeState.restype = CLUSTER_NODE_STATE
+
+# https://docs.microsoft.com/en-us/windows/win32/api/clusapi/nf-clusapi-clustercontrol
+ClusterControl = ctypes.windll.ClusAPI.ClusterControl
+ClusterControl.argtypes = [HANDLE, HANDLE, DWORD, LPVOID, DWORD, LPVOID, DWORD, LPDWORD]
+ClusterControl.restype = DWORD
+
 
 class Cluster(object):
-    def __init__(self, address):
+
+    def __init__(self, address: str):
         self.__address = address
-        self.__handle = None
-
-        fn_openCluster = ctypes.windll.ClusAPI.OpenCluster
-        fn_openCluster.restype = ctypes.c_void_p
-        self.__handle = ctypes.windll.ClusAPI.OpenCluster(address)
-
+        self.__handle = OpenCluster(address)
         if not self.__handle:
             raise ctypes.WinError()
-    
+
     @property
     def name(self):
-        count = ctypes.wintypes.DWORD(255)
+        count = DWORD(255)
         name = ctypes.create_unicode_buffer(255)
-        if 0 != ctypes.windll.ClusAPI.GetClusterInformation(self.__handle, name, ctypes.byref(count), None):
+        if 0 != GetClusterInformation(self.__handle, name, ctypes.byref(count), None):
             raise ctypes.WinError()
         return name.value
-    
+
     @property
     def groups(self):
-        for g in self.__enum(8):
+        for g in self.__enum(CLUSTER_ENUM.CLUSTER_ENUM_GROUP):
             yield g
 
     @property
     def nodes(self):
-        for g in self.__enum(1):
-            yield g
-    
-    @property
-    def resources(self):
-        for g in self.__enum(4):
+        for g in self.__enum(CLUSTER_ENUM.CLUSTER_ENUM_NODE):
             yield g
 
-    def __enum(self, type):
-        objectType = ctypes.wintypes.DWORD(type)
+    @property
+    def resources(self):
+        for g in self.__enum(CLUSTER_ENUM.CLUSTER_ENUM_RESOURCE):
+            yield g
+
+    @property
+    def networks(self):
+        for n in self.__enum(CLUSTER_ENUM.CLUSTER_ENUM_NETWORK):
+            yield n
+
+    def __enum(self, type: CLUSTER_ENUM):
+        objectType = DWORD(type)
         name = ctypes.create_unicode_buffer(0)
-        count = ctypes.wintypes.DWORD(0)
+        count = DWORD(0)
         index = 0
 
         enum = ClusterOpenEnum(self.__handle, objectType)
@@ -98,25 +220,24 @@ class Cluster(object):
                 if result == 259: #ERROR_NO_MORE_ITEMS
                     break
                 yield name.value
-                index+=1
-
+                index += 1
         finally:
             if enum:
                 ClusterCloseEnum(enum)
 
-    def openGroup(self, groupName):
-        handle = OpenClusterGroup(self.__handle, groupName)
+    def openGroup(self, name: LPCWSTR):
+        handle = OpenClusterGroup(self.__handle, name)
         if not handle:
             raise ctypes.WinError()
-        return Group(handle, groupName)
-    
-    def openResource(self, name):
+        return Group(handle, name)
+
+    def openResource(self, name: LPCWSTR):
         handle = OpenClusterResource(self.__handle, name)
         if not handle:
             raise ctypes.WinError()
         return Resource(handle, name)
-    
-    def openNode(self, name):
+
+    def openNode(self, name: LPCWSTR):
         handle = OpenClusterNode(self.__handle, name)
         if not handle:
             raise ctypes.WinError()
@@ -124,62 +245,61 @@ class Cluster(object):
 
     def __del__(self):
         if self.__handle:
-            ctypes.windll.ClusAPI.CloseCluster(self.__handle)
+            CloseCluster(self.__handle)
 
-class CLUSTER_GROUP_STATE(IntEnum):
-    ClusterGroupStateUnknown = -1
-    ClusterGroupOnline = 0
-    ClusterGroupOffline = 1
-    ClusterGroupFailed = 2
-    ClusterGroupPartialOnline = 3
-    ClusterGroupPending = 4
 
 class Group(object):
-    def __init__(self, groupHandle, name):
-        self.__handle = groupHandle
+
+    def __init__(self, handle: HANDLE, name: LPCWSTR):
+        self.__handle = handle
         self.__name = name
-    
+
+    @property
+    def handle(self):
+        return self.__handle
+
     @property
     def name(self):
         return self.__name
 
     @property
     def state(self):
-        state = ctypes.windll.ClusAPI.GetClusterGroupState(self.__handle, None, None)
+        state = GetClusterGroupState(self.__handle, None, None)
         return CLUSTER_GROUP_STATE(state)
 
     def takeOffline(self):
-        result = ctypes.windll.ClusAPI.OfflineClusterGroup(self.__handle)
+        result = OfflineClusterGroup(self.__handle)
         if result != 0:
             raise ctypes.WinError()
-    
+
     def takeOnline(self):
-        result = ctypes.windll.ClusAPI.OnlineClusterGroup(self.__handle)
+        result = OnlineClusterGroup(self.__handle)
         if result != 0:
             raise ctypes.WinError()
-        
-    def moveTo(self, node):
-        result = ctypes.windll.ClusAPI.MoveClusterGroup(self.__handle, node.handle)
+
+    def moveTo(self, node: Node):
+        result = MoveClusterGroup(self.__handle, node.handle)
         if result != 0:
             raise ctypes.WinError()
-    
+
     @property
     def node(self):
         name = ctypes.create_unicode_buffer(255)
-        count = ctypes.wintypes.DWORD(255)
-        ctypes.windll.ClusAPI.GetClusterGroupState(self.__handle, name, ctypes.byref(count))
+        count = DWORD(255)
+        GetClusterGroupState(self.__handle, name, ctypes.byref(count))
         return name.value
 
     @property
     def resources(self):
-        objectType = ctypes.wintypes.DWORD(8)
+        objectType = DWORD(8)
         name = ctypes.create_unicode_buffer(0)
-        count = ctypes.wintypes.DWORD(0)
+        count = DWORD(0)
         index = 0
 
         enum =  ClusterGroupOpenEnum(self.__handle, 1)
         if not enum:
             raise ctypes.WinError()
+
         try:
             while True:
                 result = ClusterGroupEnum(enum, index, objectType, name, count)
@@ -190,31 +310,45 @@ class Group(object):
                 if result == 259: #ERROR_NO_MORE_ITEMS
                     break
                 yield name.value
-                index+=1
-
+                index += 1
         finally:
             if enum:
                 ClusterGroupCloseEnum(enum)
 
     def __del__(self):
         if self.__handle:
-            ctypes.windll.ClusAPI.CloseClusterGroup(self.__handle)
+            CloseClusterGroup(self.__handle)
 
-class CLUSTER_RESOURCE_STATE(IntEnum):
-    ClusterResourceStateUnknown    = -1
-    ClusterResourceInherited       = 0
-    ClusterResourceInitializing    = 1
-    ClusterResourceOnline          = 2
-    ClusterResourceOffline         = 3
-    ClusterResourceFailed          = 4
-    ClusterResourcePending         = 128
-    ClusterResourceOnlinePending   = 129
-    ClusterResourceOfflinePending  = 130
+
+class ResourceState(object):
+
+    def __init__(self, state: CLUSTER_RESOURCE_STATE, node: LPCWSTR, group: LPCWSTR):
+        self.__state = state
+        self.__node = node
+        self.__group = group
+
+    @property
+    def state(self):
+        return self.__state
+
+    @property
+    def node(self):
+        return self.__node
+
+    @property
+    def group(self):
+        return self.__group
+
 
 class Resource(object):
-    def __init__(self, handle, name):
+
+    def __init__(self, handle: HANDLE, name: LPCWSTR):
         self.__handle = handle
         self.__name = name
+
+    @property
+    def handle(self):
+        return self.__handle
 
     @property
     def name(self):
@@ -222,34 +356,56 @@ class Resource(object):
 
     @property
     def state(self):
-        state = ctypes.windll.ClusAPI.GetClusterResourceState(self.__handle, None, None, None, None)
-        return CLUSTER_RESOURCE_STATE(state)
+        """Get cluster resource state.
+
+        Returns a ResourceState object with 3 properties:
+            * state: current state of the specified resource, part of CLUSTER_RESOURCE_STATE enum.
+            * node: name of the specified resource's current owner node.
+            * group: name of the group that contains the specified resource.
+        """
+        _node = ctypes.create_unicode_buffer(255)
+        _group = ctypes.create_unicode_buffer(255)
+        _size = DWORD(255)
+        _state = GetClusterResourceState(self.__handle, _node, ctypes.byref(_size), _group, ctypes.byref(_size))
+        return ResourceState(_state, _node.value, _group.value)
 
     def __del__(self):
         if self.__handle:
-            ctypes.windll.ClusAPI.CloseClusterResource(self.__handle)
-    
+            CloseClusterResource(self.__handle)
+
     def takeOffline(self):
-        result = ctypes.windll.ClusAPI.OfflineClusterResource(self.__handle)
-        if result != 0:
-            raise ctypes.WinError()
-    
-    def takeOnline(self):
-        result = ctypes.windll.ClusAPI.OnlineClusterResource(self.__handle)
+        result = OfflineClusterResource(self.__handle)
         if result != 0:
             raise ctypes.WinError()
 
+    def takeOnline(self):
+        result = OnlineClusterResource(self.__handle)
+        if result != 0:
+            raise ctypes.WinError()
+
+
 class Node(object):
-    def __init__(self, handle):
+
+    def __init__(self, handle: HANDLE, name: LPCWSTR):
         self.__handle = handle
-    
+        self.__name = name
+
     @property
     def handle(self):
         return self.__handle
 
+    @property
+    def name(self):
+        return self.__name
+
+    @property
+    def state(self):
+        return GetClusterNodeState(self.__handle)
+
     def __del__(self):
         if self.__handle:
-            ctypes.windll.ClusAPI.CloseClusterNode(self.__handle)
+            CloseClusterNode(self.__handle)
+
 
 if __name__ == '__main__':
     unittest.main();
