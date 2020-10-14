@@ -277,7 +277,7 @@ class Group(object):
         if result != 0:
             raise ctypes.WinError()
 
-    def moveTo(self, node: Node):
+    def moveTo(self, node: 'Node'):
         result = MoveClusterGroup(self.__handle, node.handle)
         if result != 0:
             raise ctypes.WinError()
