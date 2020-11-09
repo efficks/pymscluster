@@ -22,20 +22,20 @@ Example
 
     import mscluster
 
-    c = Cluster()
+    c = mscluster.Cluster()  # localhost by default
 
-    print('Cluster name: {}'.format(c.name))
+    Cname = c.name
     
     for Gname in c.groups:
         G = c.openGroup(Gname)
         Gnode = G.node
         Gstate = G.state
-        print('ResourceGroup[%s] state[%s] ownerNode[%s]' % (Gname, Gstate.name, Gnode))
+        print('Cluster [%s] ResourceGroup[%s] state[%s] ownerNode[%s]' % (Cname, Gname, Gstate.name, Gnode))
 
     for Nname in c.nodes:
         N = c.openNode(Nname)
         Nstate = N.state
-        print('Node[%s] state[%s]' % (Nname, Nstate.name))
+        print('Cluster [%s] Node[%s] state[%s]' % (Cname, Nname, Nstate.name))
 
     for Rname in c.resources:
         R = c.openResource(Rname)
@@ -43,8 +43,9 @@ Example
         Rgroup = R.state.group
         Rnode = Rstate.node
         Rtype = R.type
-        print("Resource[%s] Type[%s] State[%s] OwnedBy[%s] Group[%s]"
-              % (Rname, Rtype, Rstate.state.name, Rnode, Rgroup))
+        print('Cluster [%s] Resource[%s] Type[%s] State[%s] OwnedBy[%s] Group[%s]'
+              % (Cname, Rname, Rtype, Rstate.state.name, Rnode, Rgroup))
+
 
     r = c.openResource("IP Address 192.168.12.236")
     r.takeOffline()
