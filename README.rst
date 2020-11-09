@@ -46,6 +46,7 @@ Example
         print("Resource[%s] Type[%s] State[%s] OwnedBy[%s] Group[%s]"
               % (Rname, Rtype, Rstate.state.name, Rnode, Rgroup))
 
+
     r = c.openResource("IP Address 192.168.12.236")
     r.takeOffline()
     t.takeOnline()
