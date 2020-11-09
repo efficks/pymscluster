@@ -21,26 +21,30 @@ Example
 .. code-block:: python
 
     import mscluster
-    
-    c = mscluster.Cluster("localhost")
+
+    c = Cluster()
 
     print('Cluster name: {}'.format(c.name))
     
-    for gname in c.groups:
-        g = c.openGroup(gname)
-        gnode = g.node
-        gstate = g.state
-        print('Resource Group: {}, state: {}, owner node: {}'.format(gname, gstate.name, gnode))
+    for Gname in c.groups:
+        G = c.openGroup(Gname)
+        Gnode = G.node
+        Gstate = G.state
+        print('ResourceGroup[%s] state[%s] ownerNode[%s]' % (Gname, Gstate.name, Gnode))
 
-    for nname in c.nodes:
-        n = c.openNode(nname)
-        nstate = n.state
-        print('Node: {}, state: {}'.format(nname, nstate.name))
+    for Nname in c.nodes:
+        N = c.openNode(Nname)
+        Nstate = N.state
+        print('Node[%s] state[%s]' % (Nname, Nstate.name))
 
-    for rname in c.resources:
-        r = c.openResource(rname)
-        rstate = r.state
-        print('Resource: {}, state: {}, node: {}, group: {}'.format(rname, rstate.state.name, rstate.node, rstate.group))
+    for Rname in c.resources:
+        R = c.openResource(Rname)
+        Rstate = R.state
+        Rgroup = R.state.group
+        Rnode = Rstate.node
+        Rtype = R.type
+        print("Resource[%s] Type[%s] State[%s] OwnedBy[%s] Group[%s]"
+              % (Rname, Rtype, Rstate.state.name, Rnode, Rgroup))
 
     r = c.openResource("IP Address 192.168.12.236")
     r.takeOffline()
